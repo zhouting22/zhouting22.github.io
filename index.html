@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<canvas id="canvas" width="800" height="600" style="border:1px solid red;"></canvas>
+</body>
+<script src="jquery-2.1.4.js"></script>
+<script>
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+
+    function Clock(opt){
+        if(!opt) throw new Error("请提供参数");
+
+        var requireArgs="bigX,bigY,bigR".split(",");
+        requireArgs.forEach(function(v){
+            if(!opt.hasOwnProperty(v)) throw new Error("请给参数提供属性："+v);
+        });
+
+        var defaultOpt={
+            bigColor:"#335F9A",
+            bigLineWidth:2
+        }
+
+        $.extend(this,defaultOpt,opt);
+
+        ctx.font="20px 微软雅黑";
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+
+
+        this.init();
+    }
+
+    Clock.prototype={
+        constructor:Clock,
+
+        init:function(){
+            var self=this;
+
+            var timer=setInterval(function(){
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+
+                self.drawBigCircle();
+
+                self.drawTicks();
+
+                self.drawPoints();
+
+                ctx.fillText((new Date()).toLocaleString(),300,100);
+            },1000)
+        },
+
+        //绘制蓝色大圆
+        drawBigCircle:function(){
+            ctx.beginPath();
+
+            ctx.strokeStyle=this.bigColor;
+            ctx.lineWidth=this.bigLineWidth;
+
+            ctx.arc(this.bigX,this.bigY,this.bigR,0,2*Math.PI);
+            ctx.stroke();
+        },
+
+        //绘制刻度线
+        drawTicks:function(){
+            ctx.strokeStyle="black";
+
+            var startRadian=-Math.PI/3;
+
+            for (var i = 0; i < 60; i++) {
+
+
+
+                //处理刻度线长度和线宽
+                var length;
+                var width;
+
+                length=this.tick[i%5==0?"big":"small"].length;
+                width=this.tick[i%5==0?"big":"small"].width;
+
+
+                //相邻刻度线之间的弧度差
+                var singleRadian=2*Math.PI/60;
+                //计算出每一个刻度线的弧度值
+                var radian=startRadian+i*singleRadian;
+
+
+                var h1=Math.sin(radian)*(this.bigR-this.bigLineWidth/2);
+                var b1=Math.cos(radian)*(this.bigR-this.bigLineWidth/2);
+
+                //起点
+                var x1=this.bigX+b1;
+                var y1=this.bigY+h1;
+
+                var h2=Math.sin(radian)*(this.bigR-length);
+                var b2=Math.cos(radian)*(this.bigR-length);
+
+                //终点
+                var x2=this.bigX+b2;
+                var y2=this.bigY+h2;
+
+                ctx.beginPath();
+                ctx.lineWidth=width;
+
+                ctx.moveTo(x1,y1);
+                ctx.lineTo(x2,y2);
+                ctx.stroke();
+
+                //绘制文字
+                if(i%5==0){
+                    this.drawText(i/5+1,radian);
+                }
+            }
+        },
+
+        /**
+         * 根据文字的弧度和内容绘制文字
+         * @param text 文字的内容
+         * @param radian 文字的弧度
+         */
+        drawText:function(text,radian){
+
+            var h1=Math.sin(radian)*(110);
+            var b1=Math.cos(radian)*(110);
+
+            //起点
+            var x=this.bigX+b1;
+            var y=this.bigY+h1;
+
+            ctx.fillText(text,x,y);
+
+        },
+
+        drawPoints:function(){
+            //1、来一个固定时间
+            var date=new Date();
+            //2、获取时分秒的值
+            var hour=date.getHours()%12;   //0-23
+            var minute=date.getMinutes();
+            var second=date.getSeconds();   //15-->3
+
+            //3、根据时间确定弧度
+            var radian=second*2*Math.PI/60-Math.PI/2;
+
+            //4、指定长度
+            var secondLength=50;
+
+            //5、绘制指针
+            this.drawSinglePoint(radian,secondLength,"black");
+
+            var minuteRadian=minute*2*Math.PI/60-Math.PI/2;
+            var minuteLength=40;
+            this.drawSinglePoint(minuteRadian,minuteLength,"blue");
+
+
+            var hourRadian=hour*2*Math.PI/12-Math.PI/2;
+            var hourLength=30;
+            this.drawSinglePoint(hourRadian,hourLength,"red");
+        },
+        //绘制单个指针
+        drawSinglePoint:function(radian,length,color){
+            var b1=Math.cos(radian)*length;
+            var h1=Math.sin(radian)*length;
+
+            var x=this.bigX+b1;
+            var y=this.bigY+h1;
+
+            ctx.beginPath();
+            ctx.strokeStyle=color;
+
+            ctx.moveTo(this.bigX,this.bigY);
+            ctx.lineTo(x,y);
+            ctx.stroke();
+        }
+    };
+
+    var clock=new Clock({
+        bigX:300,
+        bigY:300,
+        bigR:150,
+        bigColor:"#335F9A",
+        bigLineWidth:10,
+        tick:{
+            //小刻度线
+            small:{
+                length:15,
+                width:4
+            },
+            //大刻度线
+            big:{
+                length:26,
+                width:8
+            }
+        }
+    });
+</script>
+</html>
